@@ -1,7 +1,8 @@
 #include <CapacitiveSensor.h>
 #include <AccelStepper.h>
 
-#define FULLSTEP 4 //half step
+//half step
+#define FULLSTEP 4
 // Motor pins
 #define motor1  8 // IN1 on the driver
 #define motor2  9 // IN2 on the driver
