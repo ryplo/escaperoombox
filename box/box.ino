@@ -3,6 +3,7 @@
 
 // pins for flex sensors on fingers
 int fingers[5] = {A0, A1, A2, A3, A4};
+bool fingers_check[5] = {false, false, false, false, false};
 
 //half step
 #define FULLSTEP 4
@@ -24,20 +25,30 @@ void setup() {
   Serial.begin(9600);
 
   // declare finger flex sensor pins
-  for (int i = 0; i++; i < 4) {
+  for (int i = 0; i++; i < 5) {
     pinMode(fingers[i], INPUT);
   }
-  pinMode(6, OUTPUT);
-  stepper1.setMaxSpeed(1000.0);
-  stepper1.setAcceleration(100.0);
-  stepper1.setSpeed(300);
+//  pinMode(6, OUTPUT);
+//  stepper1.setMaxSpeed(1000.0);
+//  stepper1.setAcceleration(100.0);
+//  stepper1.setSpeed(300);
 }
 
 void loop() {
   for (int i = 0;  i < 5; i++) {
-    Serial.println(analogRead(fingers[i]));
+    if (analogRead(fingers[i]) >= 700) {
+      fingers_check[i] = true;
+    } 
+    else {
+      fingers_check[i] = false;
+    }
   }
-  delay(500);
+
+  // start game 
+  if !(fingers[0] || fingers[1] || fingers[2] || fingers[3] || fingers[4]) {
+    
+  }
+  delay(700);
 
 // motor code
 //  long val = cap.capacitiveSensor(30); //a: Sensor resolution is set to 80
