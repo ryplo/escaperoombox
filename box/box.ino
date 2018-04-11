@@ -1,5 +1,10 @@
 #include <CapacitiveSensor.h>
 
+//LED's
+int led[3] = {A5, 8, 9};
+//int ledCap = 1;
+//int ledFing = 0;
+
 // pins for flex sensors on fingers
 int fingers[5] = {A0, A1, A2, A3, A4};
 
@@ -18,11 +23,14 @@ int gameFingers[5][5] = {
 #define motor2  11 // IN2 on the driver
 #define motor3  12 // IN3 on the driver
 #define motor4  13 // IN4 on the driver
+int motorDelay = 2;
 
 const int STRAIGHT = 800; // volt when straight
 const int BEND = 600; // volt at 90 deg
 
-CapacitiveSensor startCap = CapacitiveSensor(0,1); //pin 1 receive - start game palm 
+int ledDelay[2] = {500, 250};
+int delayIndex = 0;
+
 CapacitiveSensor game1Cap = CapacitiveSensor(2,3); //pin 3 receive - game 1
 CapacitiveSensor game2Cap = CapacitiveSensor(4,5); //pin 5 receive - game 2
 CapacitiveSensor game3Cap = CapacitiveSensor(6,7); //pin 7 receive - game 3
@@ -41,10 +49,13 @@ int fingerPrint = 4;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(motorPin1, OUTPUT);
-  pinMode(motorPin2, OUTPUT);
-  pinMode(motorPin3, OUTPUT);
-  pinMode(motorPin4, OUTPUT);
+  pinMode(motor1, OUTPUT);
+  pinMode(motor2, OUTPUT);
+  pinMode(motor3, OUTPUT);
+  pinMode(motor4, OUTPUT);
+  pinMode(led[0], OUTPUT);
+  pinMode(led[1], OUTPUT);
+  pinMode(led[2], OUTPUT);
 
   // declare finger flex sensor pins
   for (int i = 0; i++; i < 5) {
@@ -81,13 +92,21 @@ void checkGame(int gameNum) {
   bool cap = false;
   bool finger = false;
   while (!(cap && finger)) {
+    flashLED(led[gameNum], delayIndex);
     cap = checkCap(gameNum);
     finger = checkFingers(gameNum);
+    if (cap) {
+      Serial.println("cap");
+    }
+    if ((cap || finger) && delayIndex == 0) {
+      delayIndex += 1;
+    }
     if (finger) {
       Serial.println("finger");
     }
   }
   Serial.println("done checking");
+  digitalWrite(led[gameNum], HIGH);
   Serial.println(gameNum);
   gameNum += 1;
 }
@@ -99,7 +118,7 @@ bool checkFingers(int game_num) {
   for (int i = 0;  i < 5; i++) {
     if ((gameFingers[game_num][i]) != (analogRead(fingers[i]) <= (fingerThresh[i]))) {
       corr = false;
-    } 
+    }
   }
   return corr;
 }
@@ -150,26 +169,33 @@ bool checkCap(int capNum) {
 
 void turnMotors(int turns) {
   for (int i = 0; i <= turns * 512; i++) {
-    digitalWrite(motorPin1, HIGH);
-    digitalWrite(motorPin2, LOW);
-    digitalWrite(motorPin3, LOW);
-    digitalWrite(motorPin4, LOW);
-    delay(delayTime);
-    digitalWrite(motorPin1, LOW);
-    digitalWrite(motorPin2, HIGH);
-    digitalWrite(motorPin3, LOW);
-    digitalWrite(motorPin4, LOW);
-    delay(delayTime);
-    digitalWrite(motorPin1, LOW);
-    digitalWrite(motorPin2, LOW);
-    digitalWrite(motorPin3, HIGH);
-    digitalWrite(motorPin4, LOW);
-    delay(delayTime);
-    digitalWrite(motorPin1, LOW);
-    digitalWrite(motorPin2, LOW);
-    digitalWrite(motorPin3, LOW);
-    digitalWrite(motorPin4, HIGH);
-    delay(delayTime);
+    digitalWrite(motor1, HIGH);
+    digitalWrite(motor2, LOW);
+    digitalWrite(motor3, LOW);
+    digitalWrite(motor4, LOW);
+    delay(motorDelay);
+    digitalWrite(motor1, LOW);
+    digitalWrite(motor2, HIGH);
+    digitalWrite(motor3, LOW);
+    digitalWrite(motor4, LOW);
+    delay(motorDelay);
+    digitalWrite(motor1, LOW);
+    digitalWrite(motor2, LOW);
+    digitalWrite(motor3, HIGH);
+    digitalWrite(motor4, LOW);
+    delay(motorDelay);
+    digitalWrite(motor1, LOW);
+    digitalWrite(motor2, LOW);
+    digitalWrite(motor3, LOW);
+    digitalWrite(motor4, HIGH);
+    delay(motorDelay);
   }
+}
+
+void flashLED(int led, int delayIndex) {
+  digitalWrite(led, HIGH);
+  delay(ledDelay[delayIndex]);
+  digitalWrite(led, LOW);
+  delay(ledDelay[delayIndex]);
 }
 
