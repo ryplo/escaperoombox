@@ -3,6 +3,8 @@
 
 // pins for flex sensors on fingers
 int fingers[5] = {A0, A1, A2, A3, A4};
+
+int fingerThresh[5] = {770, 750, 765, 740, 750};
 bool fingersCheck[5] = {false, false, false, false, false};
 int gameFingers[5][5] = {
   {false, false, false, false, false}, //open hand
@@ -37,6 +39,10 @@ CapacitiveSensor caps[3] = {game1Cap, game2Cap, game3Cap};
 unsigned long capSum;
 
 int gameNum = 0;
+bool debug = false;
+bool finger = false;
+bool testMotor = true;
+int fingerPrint = 4;
 
 void setup() {
   Serial.begin(9600);
@@ -53,19 +59,25 @@ void setup() {
 }
 
 void loop() {
-  for (int i = 0; i < 3; i++) {
-    Serial.println("start game ");
-    Serial.println(i);
-    checkGame(i);
-    long curr = stepper1.currentPosition();
-    long goal = curr + 4096/2;
-    stepper1.runToNewPosition(goal);
-    Serial.println("one rotation");
+  if (debug) {
+    debugFingers(1);
   }
-//checkCap(0);
-//  debugFingers(1);
-  delay(400);
-
+  else if (finger) {
+    printFinger(fingerPrint);
+  }
+  else if (testMotor) {
+    turnMotors(1);
+  }
+  else {
+    for (int i = 0; i < 3; i++) {
+      Serial.println("start game ");
+      Serial.println(i);
+      checkGame(i);
+      turnMotors(1);
+    }
+  
+    delay(400);
+  }
 }
 
 void checkGame(int gameNum) {
@@ -88,7 +100,7 @@ bool checkFingers(int game_num) {
   Serial.println(game_num);
   bool corr = true;
   for (int i = 0;  i < 5; i++) {
-    if ((gameFingers[game_num][i]) != (analogRead(fingers[i]) <= 700)) {
+    if ((gameFingers[game_num][i]) != (analogRead(fingers[i]) <= (fingerThresh[i]))) {
       corr = false;
     } 
   }
@@ -97,17 +109,26 @@ bool checkFingers(int game_num) {
 
 bool debugFingers(int capNum) {
   for (int i = 0;  i < 5; i++) {
-    if (analogRead(fingers[i]) <= 700) {
+    if (analogRead(fingers[i]) <= (fingerThresh[i])) {
       fingersCheck[i] = true;
     } 
+    else {
+      fingersCheck[i] = false;
+    }
   }
-  if (checkCap(capNum)) {
+  bool check = checkCap(capNum);
+  if (check) {
     for (int i = 0;  i < 5; i++) {
-    if (fingersCheck[i]) {
-      Serial.println(i);
-    } 
+      if (fingersCheck[i]) {
+        Serial.println(i);
+      } 
+    }
   }
-  }
+}
+
+void printFinger(int finger) {
+  Serial.println(analogRead(fingers[finger]));
+  delay(100);
 }
 
 bool checkCap(int capNum) {
@@ -127,6 +148,31 @@ bool checkCap(int capNum) {
   } else {
     capSum = 0; //Timeout caused by bad readings
     return false;
+  }
+}
+
+void turnMotors(int turns) {
+  for (int i = 0; i <= turns * 512; i++) {
+    digitalWrite(motorPin1, HIGH);
+    digitalWrite(motorPin2, LOW);
+    digitalWrite(motorPin3, LOW);
+    digitalWrite(motorPin4, LOW);
+    delay(delayTime);
+    digitalWrite(motorPin1, LOW);
+    digitalWrite(motorPin2, HIGH);
+    digitalWrite(motorPin3, LOW);
+    digitalWrite(motorPin4, LOW);
+    delay(delayTime);
+    digitalWrite(motorPin1, LOW);
+    digitalWrite(motorPin2, LOW);
+    digitalWrite(motorPin3, HIGH);
+    digitalWrite(motorPin4, LOW);
+    delay(delayTime);
+    digitalWrite(motorPin1, LOW);
+    digitalWrite(motorPin2, LOW);
+    digitalWrite(motorPin3, LOW);
+    digitalWrite(motorPin4, HIGH);
+    delay(delayTime);
   }
 }
 
