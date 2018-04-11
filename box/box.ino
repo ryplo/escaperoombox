@@ -1,5 +1,4 @@
 #include <CapacitiveSensor.h>
-#include <AccelStepper.h>
 
 // pins for flex sensors on fingers
 int fingers[5] = {A0, A1, A2, A3, A4};
@@ -14,10 +13,6 @@ int gameFingers[5][5] = {
   {false, true, true, true, false}, //hang loose
 };
 
-
-//half step
-#define FULLSTEP 4
-
 // Motor pins
 #define motor1  10 // IN1 on the driver
 #define motor2  11 // IN2 on the driver
@@ -26,8 +21,6 @@ int gameFingers[5][5] = {
 
 const int STRAIGHT = 800; // volt when straight
 const int BEND = 600; // volt at 90 deg
-
-AccelStepper stepper1(FULLSTEP, motor1, motor3, motor2, motor4);
 
 CapacitiveSensor startCap = CapacitiveSensor(0,1); //pin 1 receive - start game palm 
 CapacitiveSensor game1Cap = CapacitiveSensor(2,3); //pin 3 receive - game 1
@@ -41,21 +34,22 @@ unsigned long capSum;
 int gameNum = 0;
 bool debug = false;
 bool finger = false;
-bool testMotor = true;
+bool testMotor = false;
+bool testCap = false;
+int capTest = 1;
 int fingerPrint = 4;
 
 void setup() {
   Serial.begin(9600);
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
+  pinMode(motorPin3, OUTPUT);
+  pinMode(motorPin4, OUTPUT);
 
   // declare finger flex sensor pins
   for (int i = 0; i++; i < 5) {
     pinMode(fingers[i], INPUT);
   }
-//  code for motor
-
-  stepper1.setMaxSpeed(1000.0);
-  stepper1.setAcceleration(100.0);
-  stepper1.setSpeed(300);
 }
 
 void loop() {
@@ -67,6 +61,9 @@ void loop() {
   }
   else if (testMotor) {
     turnMotors(1);
+  }
+  else if (testCap) {
+    checkCap(capTest);
   }
   else {
     for (int i = 0; i < 3; i++) {
