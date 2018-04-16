@@ -8,14 +8,14 @@ int led[3] = {A5, 8, 9};
 // pins for flex sensors on fingers
 int fingers[5] = {A0, A1, A2, A3, A4};
 
-int fingerThresh[5] = {770, 750, 765, 740, 750};
+int fingerThresh[5] = {770, 750, 765, 740, 760};
 bool fingersCheck[5] = {false, false, false, false, false};
-int gameFingers[5][5] = {
-  {false, false, false, false, false}, //open hand
+int gameFingers[3][5] = {
+ // {false, false, false, false, false}, //open hand
   {true, true, true, true, true}, //fist
   {true, false, false, true, true}, //peace
   {false, false, true, true, false}, //devil horns
-  {false, true, true, true, false}, //hang loose
+ // {false, true, true, true, false}, //hang loose
 };
 
 // Motor pins
@@ -28,7 +28,7 @@ int motorDelay = 2;
 const int STRAIGHT = 800; // volt when straight
 const int BEND = 600; // volt at 90 deg
 
-int ledDelay[2] = {500, 250};
+int ledDelay[2] = {700, 250};
 int delayIndex = 0;
 
 CapacitiveSensor game1Cap = CapacitiveSensor(2,3); //pin 3 receive - game 1
@@ -44,7 +44,7 @@ bool debug = false;
 bool finger = false;
 bool testMotor = false;
 bool testCap = false;
-int capTest = 1;
+int capTest = 0;
 int fingerPrint = 4;
 
 void setup() {
@@ -76,35 +76,33 @@ void loop() {
   else if (testCap) {
     checkCap(capTest);
   }
-  else {
+  else if (gameNum < 3) {
+    digitalWrite(A5, LOW);
+    digitalWrite(8, LOW);
+    digitalWrite(9, LOW);
     for (int i = 0; i < 3; i++) {
+      delayIndex = 0;
       Serial.println("start game ");
       Serial.println(i);
       checkGame(i);
-      turnMotors(1);
+      turnMotors(3 + gameNum);
     }
-  
-    delay(400);
   }
 }
 
 void checkGame(int gameNum) {
   bool cap = false;
   bool finger = false;
-  while (!(cap && finger)) {
-    flashLED(led[gameNum], delayIndex);
+  while (!cap) {
     cap = checkCap(gameNum);
-    finger = checkFingers(gameNum);
-    if (cap) {
-      Serial.println("cap");
-    }
-    if ((cap || finger) && delayIndex == 0) {
-      delayIndex += 1;
-    }
-    if (finger) {
-      Serial.println("finger");
-    }
   }
+  Serial.println("cap");
+  delayIndex += 1;
+  while (!finger) {
+    flashLED(led[gameNum], delayIndex);
+    finger = checkFingers(gameNum);
+  }
+  Serial.println("finger");
   Serial.println("done checking");
   digitalWrite(led[gameNum], HIGH);
   Serial.println(gameNum);
@@ -112,12 +110,21 @@ void checkGame(int gameNum) {
 }
 
 bool checkFingers(int game_num) {
-  Serial.println("fingers game");
   Serial.println(game_num);
   bool corr = true;
-  for (int i = 0;  i < 5; i++) {
+  for (int i = 0; i < 5; i++) {
     if ((gameFingers[game_num][i]) != (analogRead(fingers[i]) <= (fingerThresh[i]))) {
       corr = false;
+      Serial.println("missing: " + i);
+    }
+  }
+  if (corr) {
+    delay(500);
+    for (int i = 0; i < 5; i++) {
+      if ((gameFingers[game_num][i]) != (analogRead(fingers[i]) <= (fingerThresh[i]))) {
+        corr = false;
+        Serial.println("missing: " + i);
+      }
     }
   }
   return corr;
@@ -143,32 +150,35 @@ bool debugFingers(int capNum) {
 }
 
 void printFinger(int finger) {
-  Serial.println(analogRead(fingers[finger]));
+  Serial.println(analogRead(fingers[finger]) <= (fingerThresh[finger]));
   delay(100);
 }
 
 bool checkCap(int capNum) {
-  long capRead = caps[capNum].capacitiveSensor(80);
-  if (capRead > 100) {
-    capSum += capRead;
-    if (capSum >= 500)
-    {
-      Serial.print("Trigger: ");
-      Serial.println(capSum);
-      if (capSum > 0) {
-        capSum = 0;
+  bool triggered = false;
+  while (!triggered) {
+    long capRead = caps[capNum].capacitiveSensor(30);
+    if (capRead > 150) {
+      capSum += capRead;
+      if (capSum >= 500)
+      {
+        Serial.print("Trigger: ");
+        Serial.println(capSum);
+        if (capSum > 0) {
+          capSum = 0;
+        }
+        caps[capNum].reset_CS_AutoCal(); //Stops readings
+        triggered = true;
       }
-      caps[capNum].reset_CS_AutoCal(); //Stops readings
-      return true;
+    } else {
+      capSum = 0; //Timeout caused by bad readings
     }
-  } else {
-    capSum = 0; //Timeout caused by bad readings
-    return false;
   }
+  return true;
 }
 
 void turnMotors(int turns) {
-  for (int i = 0; i <= turns * 512; i++) {
+  for (int i = 0; i <= turns * 1000; i++) {
     digitalWrite(motor1, HIGH);
     digitalWrite(motor2, LOW);
     digitalWrite(motor3, LOW);
