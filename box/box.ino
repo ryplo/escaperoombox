@@ -8,14 +8,14 @@ int led[3] = {A5, 8, 9};
 // pins for flex sensors on fingers
 int fingers[5] = {A0, A1, A2, A3, A4};
 
+int turns[3] = {2, 2, 12};
+
 int fingerThresh[5] = {770, 750, 765, 740, 760};
 bool fingersCheck[5] = {false, false, false, false, false};
 int gameFingers[3][5] = {
- // {false, false, false, false, false}, //open hand
   {true, true, true, true, true}, //fist
   {true, false, false, true, true}, //peace
-  {false, false, true, true, false}, //devil horns
- // {false, true, true, true, false}, //hang loose
+  {false, false, true, true, false}, //love
 };
 
 // Motor pins
@@ -39,7 +39,7 @@ CapacitiveSensor caps[3] = {game1Cap, game2Cap, game3Cap};
 
 unsigned long capSum;
 
-int gameNum = 0;
+int globalGameNum = 0;
 bool debug = false;
 bool finger = false;
 bool testMotor = false;
@@ -71,12 +71,12 @@ void loop() {
     printFinger(fingerPrint);
   }
   else if (testMotor) {
-    turnMotors(1);
+    turnMotors(10);
   }
   else if (testCap) {
     checkCap(capTest);
   }
-  else if (gameNum < 3) {
+  else if (globalGameNum < 3) {
     digitalWrite(A5, LOW);
     digitalWrite(8, LOW);
     digitalWrite(9, LOW);
@@ -85,7 +85,9 @@ void loop() {
       Serial.println("start game ");
       Serial.println(i);
       checkGame(i);
-      turnMotors(3 + gameNum);
+      Serial.println("gameNum");
+      Serial.println(globalGameNum);
+      turnMotors(turns[i]);
     }
   }
 }
@@ -106,12 +108,13 @@ void checkGame(int gameNum) {
   Serial.println("done checking");
   digitalWrite(led[gameNum], HIGH);
   Serial.println(gameNum);
-  gameNum += 1;
+  globalGameNum += 1;
 }
 
 bool checkFingers(int game_num) {
   Serial.println(game_num);
   bool corr = true;
+  
   for (int i = 0; i < 5; i++) {
     if ((gameFingers[game_num][i]) != (analogRead(fingers[i]) <= (fingerThresh[i]))) {
       corr = false;
@@ -178,6 +181,8 @@ bool checkCap(int capNum) {
 }
 
 void turnMotors(int turns) {
+  Serial.println("turns: ");
+  Serial.println(turns);
   for (int i = 0; i <= turns * 1000; i++) {
     digitalWrite(motor1, HIGH);
     digitalWrite(motor2, LOW);
