@@ -12,12 +12,25 @@ void setup() {
 }
 
 void loop() {
-  opp_turn();
-  //turn();
+//  opp_turn();
+  up();
+  delay(50000);
+}
+
+void up_two_rev() {
+  for (int i = 1; i <= 1000; i++) {
+    up();
+  }
+}
+
+void down_two_rev() {
+  for (int i = 1; i <= 1000; i++) {
+    down();
+  }
 }
 
 // CCW
-void turn() {
+void up() {
   digitalWrite(motorPin1, HIGH);
   digitalWrite(motorPin2, LOW);
   digitalWrite(motorPin3, LOW);
@@ -41,7 +54,7 @@ void turn() {
 }
 
 //CW
-void opp_turn() {
+void down() {
   digitalWrite(motorPin1, LOW);
   digitalWrite(motorPin2, LOW);
   digitalWrite(motorPin3, LOW);
